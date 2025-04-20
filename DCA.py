@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from scipy.integrate import simps
+import numpy_financial as npf
 from io import BytesIO
 
 # -------------------------------
@@ -34,20 +36,18 @@ def forecast_production(model_func, t_forecast, *params):
     return model_func(t_forecast, *params)
 
 def calculate_eur(t, q):
-    return np.trapz(q, t)
+    return simps(q, x=t)
 
 # -------------------------------
 # 4. Economic Evaluation
 # -------------------------------
-def manual_npv(rate, cash_flows):
-    return sum(cf / (1 + rate) ** t for t, cf in enumerate(cash_flows))
-    
+
 def economic_analysis(t, q, price_per_bbl=70, cost_per_bbl=15):
     revenue = q * price_per_bbl
     cost = q * cost_per_bbl
     net_cash_flow = revenue - cost
-    npv = manual_npv(0.1, net_cash_flow)
-    return revenue.sum(), cost.sum(), net_cash_flow.sum(), npv
+    npv = npf.npv(0.1, net_cash_flow)
+    return revenue, cost, net_cash_flow, npv
 
 # -------------------------------
 # 5. Plotting
@@ -120,20 +120,35 @@ def main():
         price = st.number_input("Oil Price ($/bbl)", value=70.0)
         cost = st.number_input("Operating Cost ($/bbl)", value=15.0)
 
-        revenue, cost_total, net_cf, npv = economic_analysis(t_forecast, q_forecast, price, cost)
+        revenue_arr, cost_arr, net_cf_arr, npv = economic_analysis(t_forecast, q_forecast, price, cost)
 
-        st.write(f"**Total Revenue:** ${revenue:,.2f}")
-        st.write(f"**Total Cost:** ${cost_total:,.2f}")
-        st.write(f"**Net Cash Flow:** ${net_cf:,.2f}")
+        st.write(f"**Total Revenue:** ${revenue_arr.sum():,.2f}")
+        st.write(f"**Total Cost:** ${cost_arr.sum():,.2f}")
+        st.write(f"**Net Cash Flow:** ${net_cf_arr.sum():,.2f}")
         st.write(f"**NPV (10%):** ${npv:,.2f}")
 
         forecast_df = pd.DataFrame({
             'time': t_forecast,
-            'forecast_rate': q_forecast
+            'forecast_rate': q_forecast,
+            'revenue ($)': revenue_arr,
+            'cost ($)': cost_arr,
+            'net_cash_flow ($)': net_cf_arr
         })
 
+        # Add summary row
+        summary_row = pd.DataFrame({
+            'time': ['TOTAL / NPV'],
+            'forecast_rate': [np.nan],
+            'revenue ($)': [revenue_arr.sum()],
+            'cost ($)': [cost_arr.sum()],
+            'net_cash_flow ($)': [net_cf_arr.sum()]
+        })
+
+        forecast_df = pd.concat([forecast_df, summary_row], ignore_index=True)
+        forecast_df.loc[len(forecast_df)] = ['NPV (10%)', np.nan, np.nan, np.nan, npv]
+
         csv = forecast_df.to_csv(index=False).encode('utf-8')
-        st.download_button("Download Forecast CSV", data=csv, file_name='forecast.csv', mime='text/csv')
+        st.download_button("Download Forecast + Economics CSV", data=csv, file_name='forecast_economics.csv', mime='text/csv')
 
     except RuntimeError:
         st.error(f"Fit did not converge for {model_choice}")
