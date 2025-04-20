@@ -39,12 +39,14 @@ def calculate_eur(t, q):
 # -------------------------------
 # 4. Economic Evaluation
 # -------------------------------
-
+def manual_npv(rate, cash_flows):
+    return sum(cf / (1 + rate) ** t for t, cf in enumerate(cash_flows))
+    
 def economic_analysis(t, q, price_per_bbl=70, cost_per_bbl=15):
     revenue = q * price_per_bbl
     cost = q * cost_per_bbl
     net_cash_flow = revenue - cost
-    npv = np.npv(0.1, net_cash_flow)
+    npv = manual_npv(0.1, net_cash_flow)
     return revenue.sum(), cost.sum(), net_cash_flow.sum(), npv
 
 # -------------------------------
