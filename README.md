@@ -92,20 +92,6 @@ def plot_fit(df, model_name, model_func, params):
 
 ---
 
-## 🔧 Installation
-
-```bash
-pip install -r requirements.txt
-```
-
-Run the app:
-
-```bash
-streamlit run main.py
-```
-
----
-
 ## 📤 CSV Export Content
 
 Downloaded CSV includes:
