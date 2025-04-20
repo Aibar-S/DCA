@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-from scipy.integrate import simps
+from scipy.integrate import simpson
 import numpy_financial as npf
 from io import BytesIO
 
@@ -36,7 +36,7 @@ def forecast_production(model_func, t_forecast, *params):
     return model_func(t_forecast, *params)
 
 def calculate_eur(t, q):
-    return simps(q, x=t)
+    return simpson(q, x=t)
 
 # -------------------------------
 # 4. Economic Evaluation
